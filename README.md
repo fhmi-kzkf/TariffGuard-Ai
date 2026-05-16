@@ -115,7 +115,7 @@ The free tier of Gemini API has strict rate limits:
 
 **Solutions:**
 1. **Upgrade to paid tier** for higher limits
-2. **Use a different model** (e.g., `gemini-1.5-flash`) with higher quotas
+2. **Use a different model** (e.g., `gemini-2.5-flash`) with higher quotas
 3. **Implement request queuing** in your application
 4. **Add retry logic** with exponential backoff
 
