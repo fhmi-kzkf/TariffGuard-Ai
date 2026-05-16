@@ -7,6 +7,7 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import useSWR from "swr";
+import { motion, Variants } from "framer-motion";
 
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -71,6 +72,14 @@ export default function NewAudit() {
     fetcher,
     { refreshInterval: 2000 }
   );
+  const fadeInUp: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { duration: 0.5, ease: "easeOut" } 
+  }
+};
 
   // Redirect when audit completes or fails
   useEffect(() => {
