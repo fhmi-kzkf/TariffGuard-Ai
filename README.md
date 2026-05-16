@@ -468,5 +468,3 @@ For support, email support@tariffguard.ai or open an issue in the GitHub reposit
 - [ ] Mobile app development
 
 ---
-
-**Made with ❤️ by the TariffGuard Team**
