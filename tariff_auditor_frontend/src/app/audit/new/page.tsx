@@ -24,7 +24,7 @@ const formSchema = z.object({
   origin_country: z.string().length(2, "Must be 2-letter ISO code"),
   destination_country: z.string().length(2, "Must be 2-letter ISO code"),
   declared_hs_code: z.string().optional(),
-  shipment_value: z.number({ invalid_type_error: "Required" }).min(1, "Required"),
+  shipment_value: z.number({ message: "Required" }).min(1, "Required"),
 });
 
 type FormData = z.infer<typeof formSchema>;
