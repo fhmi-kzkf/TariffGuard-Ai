@@ -24,7 +24,7 @@ const formSchema = z.object({
   origin_country: z.string().length(2, "Must be 2-letter ISO code"),
   destination_country: z.string().length(2, "Must be 2-letter ISO code"),
   declared_hs_code: z.string().optional(),
-  shipment_value: z.coerce.number().min(1, "Required"),
+  shipment_value: z.number({ invalid_type_error: "Required" }).min(1, "Required"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -145,7 +145,7 @@ export default function NewAudit() {
             </div>
             <div>
               <label className="block text-[14px] text-ink font-medium mb-2">Shipment Value (USD)</label>
-              <Input {...register("shipment_value")} type="number" placeholder="25000" disabled={isSubmitting} />
+              <Input {...register("shipment_value", { valueAsNumber: true })} type="number" placeholder="25000" disabled={isSubmitting} />
               {errors.shipment_value && <p className="text-accent-red text-xs mt-1">{errors.shipment_value.message}</p>}
             </div>
           </div>

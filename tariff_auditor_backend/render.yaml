@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: tariffguard-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: SERPER_API_KEY
+        sync: false
+      - key: WCO_API_KEY
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+databases:
+  - name: tariffguard-db
+    databaseName: tariffguard
+    user: tariffguard
+
+# Made with Bob
