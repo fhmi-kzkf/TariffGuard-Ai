@@ -9,13 +9,157 @@ import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { AlertTriangle, Download, Share, RefreshCcw, Info } from "lucide-react";
 import type { AuditReport } from "@/types/audit";
+import { useState } from "react";
+import { jsPDF } from "jspdf";
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
+
+// Function to generate and download PDF
+const downloadPDF = async (report: AuditReport) => {
+  try {
+    const pdf = new jsPDF();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 20;
+    const maxWidth = pageWidth - (margin * 2);
+    let yPos = margin;
+
+    // Helper function to add text with word wrap
+    const addText = (text: string, fontSize: number = 10, isBold: boolean = false, color: [number, number, number] = [0, 0, 0]) => {
+      pdf.setFontSize(fontSize);
+      pdf.setFont("helvetica", isBold ? "bold" : "normal");
+      pdf.setTextColor(color[0], color[1], color[2]);
+      
+      const lines = pdf.splitTextToSize(text, maxWidth);
+      
+      // Check if we need a new page
+      if (yPos + (lines.length * fontSize * 0.5) > pageHeight - margin) {
+        pdf.addPage();
+        yPos = margin;
+      }
+      
+      pdf.text(lines, margin, yPos);
+      yPos += lines.length * fontSize * 0.5 + 5;
+    };
+
+    const addSection = (title: string) => {
+      yPos += 5;
+      addText(title, 14, true, [0, 102, 204]);
+      pdf.setDrawColor(0, 102, 204);
+      pdf.line(margin, yPos - 2, pageWidth - margin, yPos - 2);
+      yPos += 3;
+    };
+
+    // Header
+    pdf.setFillColor(0, 102, 204);
+    pdf.rect(0, 0, pageWidth, 40, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(24);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("TariffGuard AI", margin, 20);
+    pdf.setFontSize(12);
+    pdf.text("Audit Report", margin, 30);
+    
+    yPos = 50;
+    pdf.setTextColor(0, 0, 0);
+
+    // Audit Info
+    addText(`Audit ID: ${report.audit_id}`, 10, true);
+    addText(`Generated: ${new Date(report.generated_at).toLocaleString()}`, 9);
+    addText(`Status: ${report.status}`, 10, true, report.status === "COMPLIANT" ? [0, 128, 0] : [255, 0, 0]);
+
+    // Section 1: Product Overview
+    addSection("1. PRODUCT OVERVIEW");
+    addText(`Product Name: ${report.product_overview.product_name}`, 11, true);
+    addText(`Technical Description: ${report.product_overview.technical_description}`, 9);
+    addText(`Material Composition: ${report.product_overview.material_composition}`, 9);
+    addText(`Origin: ${report.product_overview.origin_country} → Destination: ${report.product_overview.destination_country}`, 9);
+
+    // Section 2: HS Code Classification
+    addSection("2. HS CODE CLASSIFICATION");
+    addText(`Audited HS Code: ${report.hs_classification.audited_hs_code}`, 12, true);
+    addText(`Description: ${report.hs_classification.hs_description}`, 9);
+    addText(`Declared HS Code: ${report.hs_classification.declared_hs_code || "Not Provided"}`, 9);
+    addText(`Confidence: ${report.hs_classification.confidence_label} (${(report.hs_classification.confidence * 100).toFixed(0)}%)`, 9);
+    addText(`Discrepancy: ${report.hs_classification.classification_discrepancy ? "YES" : "NO"}`, 9, false, report.hs_classification.classification_discrepancy ? [255, 0, 0] : [0, 128, 0]);
+    addText(`Regulatory Basis: ${report.hs_classification.regulatory_basis}`, 8);
+
+    // Section 3: Tariff & Duty Analysis
+    addSection("3. TARIFF & DUTY ANALYSIS");
+    addText(`Applicable Rate: ${report.tariff_analysis.applicable_rate}% (${report.tariff_analysis.rate_type})`, 9);
+    addText(`FTA Eligible: ${report.tariff_analysis.fta_eligible ? `YES - ${report.tariff_analysis.fta_name}` : "NO"}`, 9);
+    addText(`Estimated Duty: $${report.tariff_analysis.estimated_duty_usd.toLocaleString()}`, 11, true);
+
+    // Section 4: Risk Assessment
+    addSection("4. RISK ASSESSMENT");
+    addText(`Risk Level: ${report.risk_assessment.risk_level}`, 10, true,
+      report.risk_assessment.risk_level === "LOW" ? [0, 128, 0] :
+      report.risk_assessment.risk_level === "MEDIUM" ? [255, 165, 0] : [255, 0, 0]);
+    addText(`Penalty Exposure: $${report.risk_assessment.penalty_exposure_usd.toLocaleString()}`, 9);
+    addText(`Sanctions Flag: ${report.risk_assessment.sanctions_flag ? "YES" : "NO"}`, 9);
+    addText(`Dual-Use Flag: ${report.risk_assessment.dual_use_flag ? "YES" : "NO"}`, 9);
+
+    // Section 5: Agent Reasoning Chain
+    if (report.agent_reasoning_chain && report.agent_reasoning_chain.length > 0) {
+      addSection("5. AGENT REASONING CHAIN");
+      report.agent_reasoning_chain.forEach((step) => {
+        addText(`Step ${step.step}: ${step.agent}`, 9, true);
+        addText(`Action: ${step.action}`, 8);
+        addText(`Result: ${step.result}`, 8);
+        if (step.source) {
+          addText(`Source: ${step.source}`, 7, false, [100, 100, 100]);
+        }
+        yPos += 3;
+      });
+    }
+
+    // Section 6: Recommended Actions
+    addSection("6. RECOMMENDED ACTIONS");
+    if (report.recommended_actions && report.recommended_actions.length > 0) {
+      report.recommended_actions.forEach((action, i) => {
+        addText(`${i + 1}. ${action}`, 9);
+      });
+    } else {
+      addText("No specific actions recommended.", 9);
+    }
+
+    // Escalation
+    if (report.escalation?.required) {
+      addSection("⚠ ESCALATION REQUIRED");
+      addText(`Reason: ${report.escalation.reason}`, 9, false, [255, 0, 0]);
+      addText(`Priority: ${report.escalation.priority}`, 9, true);
+      addText(`Assigned to: ${report.escalation.assigned_to}`, 9);
+    }
+
+    // Footer
+    const totalPages = pdf.internal.pages.length - 1;
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(8);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text(`Generated by TariffGuard AI | Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+    }
+
+    // Save PDF
+    pdf.save(`TariffGuard_Audit_${report.audit_id}_${new Date().toISOString().split('T')[0]}.pdf`);
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    alert('Failed to generate PDF. Please try again.');
+  }
+};
 
 export default function AuditDetail() {
   const { id } = useParams();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   const { data, error, isLoading } = useSWR(`${apiUrl}/api/v1/audit/${id}`, fetcher);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    if (!data || data.status === "processing" || data.status === "failed") return;
+    setIsDownloading(true);
+    await downloadPDF(data as AuditReport);
+    setIsDownloading(false);
+  };
 
   if (isLoading) {
     return (
@@ -66,7 +210,14 @@ export default function AuditDetail() {
           </div>
           
           <div className="flex gap-3">
-            <Button variant="ghost"><Download className="w-4 h-4 mr-2" /> Download PDF</Button>
+            <Button
+              variant="ghost"
+              onClick={handleDownloadPDF}
+              disabled={isDownloading}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {isDownloading ? "Generating..." : "Download PDF"}
+            </Button>
             <Button variant="outline"><Share className="w-4 h-4 mr-2" /> Share</Button>
             <Button variant="primary"><RefreshCcw className="w-4 h-4 mr-2" /> Re-run</Button>
           </div>

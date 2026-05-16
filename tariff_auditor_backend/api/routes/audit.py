@@ -66,6 +66,22 @@ async def get_audit(audit_id: str, db: AsyncSession = Depends(get_db)):
     if record.status == "processing":
         return {"status": record.status, "progress": {"step": record.progress_step, "message": record.progress_message}}
     
+    # Handle failed status
+    if record.status == "failed":
+        return {
+            "status": "failed",
+            "error": "Audit processing failed. This may be due to API rate limits or other errors.",
+            "details": record.progress_message or "Unknown error occurred"
+        }
+    
+    # Check if report_json is None or empty
+    if not record.report_json:
+        return {
+            "status": record.status,
+            "error": "No report data available",
+            "message": "The audit completed but no report was generated"
+        }
+    
     try:
         return json.loads(record.report_json)
     except json.JSONDecodeError:

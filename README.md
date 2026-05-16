@@ -102,10 +102,22 @@ TariffGuard AI is an intelligent system that automates tariff classification, re
 - **Git**: For version control
 
 ### API Keys Required
-- **Gemini API Key**: For AI agent operations
+- **Gemini API Key**: For AI agent operations (⚠️ **Important**: Free tier has 15 requests/minute limit)
 - **Serper API Key** (Optional): For web search capabilities
 - **WCO API Key** (Optional): For World Customs Organization data
 - **Redis URL** (Optional): For caching
+
+### ⚠️ Important Notes on Gemini API
+
+The free tier of Gemini API has strict rate limits:
+- **15 requests per minute** for `gemini-3.1-flash-lite`
+- If you exceed this limit, you'll need to wait ~50 seconds before retrying
+
+**Solutions:**
+1. **Upgrade to paid tier** for higher limits
+2. **Use a different model** (e.g., `gemini-1.5-flash`) with higher quotas
+3. **Implement request queuing** in your application
+4. **Add retry logic** with exponential backoff
 
 ---
 
