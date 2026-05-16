@@ -1,8 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd tariff_auditor_frontend && npm run build",
-  "devCommand": "cd tariff_auditor_frontend && npm run dev",
-  "installCommand": "cd tariff_auditor_frontend && npm install",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
   "framework": "nextjs",
-  "outputDirectory": "tariff_auditor_frontend/.next"
+  "outputDirectory": ".next",
+  "rootDirectory": "tariff_auditor_frontend"
 }
