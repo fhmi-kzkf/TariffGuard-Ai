@@ -33,6 +33,7 @@ type FormData = z.infer<typeof formSchema>;
 export default function NewAudit() {
   const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const apiKey = process.env.NEXT_PUBLIC_BACKEND_SECRET_KEY || "super-secret-default";
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [auditId, setAuditId] = useState<string | null>(null);
@@ -50,7 +51,10 @@ export default function NewAudit() {
     try {
       const res = await fetch(`${apiUrl}/api/v1/audit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-API-Key": apiKey
+        },
         body: JSON.stringify(data),
       });
       
@@ -66,7 +70,11 @@ export default function NewAudit() {
   };
 
   // Polling logic
-  const fetcher = (url: string) => fetch(url).then(r => r.json());
+  const fetcher = (url: string) => fetch(url, {
+    headers: {
+      "X-API-Key": apiKey
+    }
+  }).then(r => r.json());
   const { data: pollData } = useSWR(
     auditId ? `${apiUrl}/api/v1/audit/${auditId}/status` : null,
     fetcher,

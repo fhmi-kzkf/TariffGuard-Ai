@@ -1,5 +1,7 @@
 import datetime
+import os
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
+from fastapi.security.api_key import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
@@ -13,7 +15,16 @@ from config import settings
 import uuid
 import json
 
-router = APIRouter(prefix="/api/v1")
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(api_key: str = Depends(api_key_header)):
+    secret_key = os.getenv("BACKEND_SECRET_KEY", "super-secret-default")
+    if api_key == secret_key:
+        return api_key
+    raise HTTPException(status_code=403, detail="Akses ditolak. Token tidak valid.")
+
+router = APIRouter(prefix="/api/v1", dependencies=[Depends(get_api_key)])
 
 # Rate limiting simple in-memory
 RATE_LIMIT = {}
