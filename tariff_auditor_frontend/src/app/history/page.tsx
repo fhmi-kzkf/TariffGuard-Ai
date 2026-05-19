@@ -7,12 +7,18 @@ import Link from "next/link";
 import useSWR from "swr";
 import { useState } from "react";
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+const fetcher = (url: string, apiKey: string) => 
+  fetch(url, {
+    headers: {
+      "X-API-Key": apiKey
+    }
+  }).then(r => r.json());
 
 export default function History() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const apiKey = process.env.NEXT_PUBLIC_BACKEND_SECRET_KEY || "super-secret-default";
   const [page, setPage] = useState(1);
-  const { data, error, isLoading } = useSWR(`${apiUrl}/api/v1/audits?limit=10&page=${page}`, fetcher);
+  const { data, error, isLoading } = useSWR([`${apiUrl}/api/v1/audits?limit=10&page=${page}`, apiKey], ([url, key]) => fetcher(url, key));
 
   return (
     <div className="max-w-7xl mx-auto px-8 py-[48px] w-full">

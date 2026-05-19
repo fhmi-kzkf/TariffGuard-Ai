@@ -6,12 +6,18 @@ import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import useSWR from "swr";
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+const fetcher = (url: string, apiKey: string) => 
+  fetch(url, {
+    headers: {
+      "X-API-Key": apiKey
+    }
+  }).then(r => r.json());
 
 export default function Dashboard() {
   // We'll use our local backend default if env is not provided.
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-  const { data, error, isLoading } = useSWR(`${apiUrl}/api/v1/audits?limit=5`, fetcher);
+  const apiKey = process.env.NEXT_PUBLIC_BACKEND_SECRET_KEY || "super-secret-default";
+  const { data, error, isLoading } = useSWR([`${apiUrl}/api/v1/audits?limit=5`, apiKey], ([url, key]) => fetcher(url, key));
 
   const stats = {
     total: data?.total || 0,

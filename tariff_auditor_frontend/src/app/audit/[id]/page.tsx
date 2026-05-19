@@ -12,7 +12,12 @@ import type { AuditReport } from "@/types/audit";
 import { useState } from "react";
 import { jsPDF } from "jspdf";
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+const fetcher = (url: string, apiKey: string) => 
+  fetch(url, {
+    headers: {
+      "X-API-Key": apiKey
+    }
+  }).then(r => r.json());
 
 // Function to generate and download PDF
 const downloadPDF = async (report: AuditReport) => {
@@ -151,7 +156,8 @@ const downloadPDF = async (report: AuditReport) => {
 export default function AuditDetail() {
   const { id } = useParams();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-  const { data, error, isLoading } = useSWR(`${apiUrl}/api/v1/audit/${id}`, fetcher);
+  const apiKey = process.env.NEXT_PUBLIC_BACKEND_SECRET_KEY || "super-secret-default";
+  const { data, error, isLoading } = useSWR(id ? [`${apiUrl}/api/v1/audit/${id}`, apiKey] : null, ([url, key]) => fetcher(url, key));
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownloadPDF = async () => {
